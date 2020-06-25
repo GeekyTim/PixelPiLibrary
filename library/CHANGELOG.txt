@@ -3,3 +3,7 @@
 
 * Initial Release
 
+0.0.2
+-----
+
+* Swapped over strips 1<>2 and 3<>4 on the board

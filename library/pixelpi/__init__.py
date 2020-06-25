@@ -28,24 +28,24 @@ GPIO.setwarnings(False)
 
 
 class PixelPi():
-    def __init__(self, strip, striplength, striptype='WS2812', brightness=1.0):
+    def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=1.0):
         """Initialise the LED Strip using the details given"""
 
         # Which strip connection is being used (1 to 4)
         if strip == 1:
-            self.__controlpin = 12
+            self.__controlpin = 10
             self.__channel = 0
-            self.__onoffpin = 4
+            self.__onoffpin = 27
         elif strip == 2:
-            self.__controlpin = 13
+            self.__controlpin = 12
             self.__channel = 1
-            self.__onoffpin = 17
+            self.__onoffpin = 4
         elif strip == 3:
             self.__controlpin = 21
             self.__channel = 0
-            self.__onoffpin = 27
+            self.__onoffpin = 17
         elif strip == 4:
-            self.__controlpin = 10
+            self.__controlpin = 13
             self.__channel = 0
             self.__onoffpin = 22
         else:
@@ -69,11 +69,12 @@ class PixelPi():
                 v = getattr(ws, t)
                 supportedstriptypes[k] = v
 
+        self.__stripshape = stripshape
         self.__striptype = supportedstriptypes[striptype]
 
-        if striplength <= 0:
+        if stripsize <= 0:
             raise ValueError("The strip length needs to be 1 or more.")
-        self.__striplength = striplength
+        self.__striplength = stripsize
 
         if brightness < 0 or brightness > 1.0:
             raise ValueError("The brightness must be between 0.0 and 1.0")
