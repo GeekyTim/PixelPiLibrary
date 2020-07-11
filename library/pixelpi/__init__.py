@@ -26,10 +26,18 @@ Available strip types (note, setting the white element of LEDs is currently not 
 
 
 class PixelPi:
+    striptypes = ["WS2812", "SK6812", "SK6812W", "SK6812_RGBW", "SK6812_RBGW", "SK6812_GRBW", "SK6812_GBRW",
+                  "SK6812_BRGW", "SK6812_BGRW", "WS2811_RGB", "WS2811_RBG", "WS2811_GRB", "WS2811_GBR",
+                  "WS2811_BRG", "WS2811_BGR"]
+    stripshapes = ["straight", "zmatrix", "matrix", "reverse"]
+    stripmatrixshapes = ["zmatrix", "matrix"]
+
     def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=1.0):
         """Initialise the LED Strip using the details given"""
 
+        # ---------------------------------------------
         # Which strip connection is being used (1 to 4)
+        # ---------------------------------------------
         if strip == 1:
             self.__controlpin = 10
             self.__channel = 0
@@ -50,15 +58,13 @@ class PixelPi:
             raise ValueError("The strip number must be between 1 and 4.")
         self.__strip = strip
 
-        # The strip types available
-        striptypes = ["WS2812", "SK6812", "SK6812W", "SK6812_RGBW", "SK6812_RBGW", "SK6812_GRBW", "SK6812_GBRW",
-                      "SK6812_BRGW", "SK6812_BGRW", "WS2811_RGB", "WS2811_RBG", "WS2811_GRB", "WS2811_GBR",
-                      "WS2811_BRG", "WS2811_BGR"]
-        if striptype not in striptypes:
+        # --------------
+        # The strip type
+        # --------------
+        if striptype not in self.striptypes:
             raise ValueError(
-                "This strip type is not supported. Use one of WS2812, SK6812, SK6812W, SK6812_RGBW, SK6812_RBGW, "
-                "SK6812_GRBW, SK6812_GBRW, SK6812_BRGW, SK6812_BGRW, WS2811_RGB, WS2811_RBG, WS2811_GRB, WS2811_GBR, "
-                "WS2811_BRG, WS2811_BGR.")
+                "This strip type is not supported.")
+        self.__striptype = striptype
 
         supportedstriptypes = {}
         for t in ws.__dict__:
@@ -66,44 +72,93 @@ class PixelPi:
                 k = t.replace('_STRIP', '')
                 v = getattr(ws, t)
                 supportedstriptypes[k] = v
+        self.__internalstriptype = supportedstriptypes[striptype]
 
+        # ---------------
+        # The strip shape
+        # ---------------
+        if stripshape not in self.stripshapes:
+            raise ValueError("The strip shape is not supported.")
+        elif stripshape in self.stripmatrixshapes and type(stripsize) is not tuple:
+            raise ValueError("A matrix shape has been defined, but the size is not a tuple (i.e. (x, y)).")
+        elif stripshape not in self.stripmatrixshapes and type(stripsize) is tuple:
+            raise ValueError("A non-matrix shape has been defined, but the size is a tuple.")
         self.__stripshape = stripshape
-        self.__striptype = supportedstriptypes[striptype]
 
+        # -----------------------------------------
+        # The size of the strip
+        # striplength is the total number of pixels
+        # -----------------------------------------
         if type(stripsize) is tuple:
-            length, width = stripsize
-            striplength = length * width
+            if len(stripsize) != 2:
+                raise ValueError("The matrix shape must be defined in width and length size (x, y) only.")
+            width, height = stripsize
+            striplength = height * width
+            self.__width = width
+            self.__height = height
         else:
             striplength = stripsize
+            self.__width = 1
+            self.__height = striplength
 
         if striplength <= 0:
             raise ValueError("The strip length needs to be 1 or more.")
         self.__striplength = striplength
 
+        # -----------------------------------
+        # The default brightness at the start
+        # -----------------------------------
         if brightness < 0 or brightness > 1.0:
             raise ValueError("The brightness must be between 0.0 and 1.0")
         self.__brightness = int(brightness * 255)
 
-        # Create an array to hold the pixel colours and brightness
+        # -------------------------------------------------
+        # An array to hold the pixel colours and brightness
+        # -------------------------------------------------
         self.__pixels = [[0, 0, 0, self.__brightness]] * self.__striplength
 
+        # ---------------------------
+        # Set up the rpi_ws281x strip
+        # ---------------------------
         self.__strip = PixelStrip(self.__striplength, self.__controlpin, 800000, 10, False, self.__brightness,
-                                  self.__channel, self.__striptype)
+                                  self.__channel, self.__internalstriptype)
+
+        # ---------------------
+        # Start the strip logic
+        # ---------------------
         self.__strip.begin()
 
+        # -------------------------------
+        # Always clear the pixels on exit
+        # -------------------------------
         self.__clear_on_exit = True
+        atexit.register(self.atexit)
 
+        # -------------------------------------------------------------------
+        # Set up the pin which defines whether the strip is written to or not
+        # -------------------------------------------------------------------
         self.__statuspin = OutputDevice(self.__onoffpin, active_high=False, initial_value=False)
         self.updatestatus = True
 
+        # ---------------
+        # Clear the strip
+        # ---------------
         self.clear()
-
-        atexit.register(self.atexit)
 
     @property
     def length(self):
         """Gets how many LEDs are in the strip"""
         return self.__striplength
+
+    @property
+    def width(self):
+        """Returns the width of the matrix"""
+        return self.__width
+
+    @property
+    def height(self):
+        """Returns the height of the matrix"""
+        return self.__height
 
     @property
     def type(self):
@@ -167,16 +222,16 @@ class PixelPi:
         self.__pixels[pixel][3] = brightness
 
     @property
-    def get_pixel(self, lednum):
+    def get_pixel(self, pixel):
         """Gets the RGB and brightness value of a specific pixel."""
-        if lednum > 0 and lednum < self.__striplength:
-            r, g, b, brightness = self.__pixels[lednum]
+        if pixel > 0 and pixel < self.__striplength:
+            r, g, b, brightness = self.__pixels[pixel]
         else:
             r, g, b, brightness = [0, 0, 0, 0]
 
         return r, g, b, brightness
 
-    def set_pixel(self, lednum, r, g, b, brightness=None):
+    def set_pixel(self, pixel, r, g, b, brightness=None):
         """Set the RGB value, and optionally brightness, of a single pixel.
 
         If you don't supply a brightness value, the last value will be kept.
@@ -187,13 +242,25 @@ class PixelPi:
         b: Blue: 0 to 255
         brightness: Brightness: 0.0 to 1.0
         """
-        if 0 <= lednum < self.__striplength:
+        if 0 <= self.__translate(pixel) < self.__striplength:
             r, g, b = [int(c) & 0xff for c in (r, g, b)]
 
             if brightness is None:
-                brightness = self.__pixels[lednum][3]
+                brightness = self.__pixels[self.__translate(pixel)][3]
 
-            self.__pixels[lednum] = [r, g, b, brightness]
+            realpixel = self.__translate(pixel)
+            if realpixel >= 0:
+                self.__pixels[realpixel] = [r, g, b, brightness]
+
+    def __fast_set_pixel(self, pixel, r, g, b, brightness=None):
+        """Does not use the translate pixel"""
+        if 0 <= pixel < self.__striplength:
+            r, g, b = [int(c) & 0xff for c in (r, g, b)]
+
+            if brightness is None:
+                brightness = self.__pixels[self.__translate(pixel)][3]
+
+            self.__pixels[pixel] = [r, g, b, brightness]
 
     def set_all(self, r, g, b, brightness=None):
         """Set the RGB value and optionally brightness of all pixels in the strip.
@@ -205,19 +272,39 @@ class PixelPi:
         b: Amount of blue: 0 to 255
         brightness: Brightness: 0.0 to 1.0
         """
-
         for pixel in range(self.__striplength):
-            self.pixel(pixel, r, g, b, brightness)
-
-    # def set_sequence(self, sequence):
-    #    """Set RGB values from a an FX sequence."""
-    #    for index, rgb in sequence:
-    #        self.set_pixel(index, *rgb)
+            self.__fast_set_pixel(pixel, r, g, b, brightness)
 
     def clear(self):
         """Clear the pixel buffer."""
         for pixel in range(self.__striplength):
             self.__pixels[pixel][0:3] = [0, 0, 0]
+
+    def show(self):
+        """Output to the strip."""
+        for pixel in range(self.__strip.numPixels()):
+            r, g, b, brightness = self.__pixels[pixel]
+            self.__strip.setPixelColorRGB(pixel, r, g, b)
+        self.__strip.show()
+
+    def __translate(self, pixel):
+        """Translates matrix co-ordinates for various different shapes"""
+
+        realpixel = -1
+        if self.__stripshape == "straight" or type(pixel) is not tuple:
+            realpixel = pixel
+        elif self.__stripshape == "reverse":
+            realpixel = self.__striplength - pixel
+        elif self.__stripshape == "zmatrix":
+            x, y = pixel
+            if y % 2 == 0:
+                realpixel = (y * self.__width) + x
+            else:
+                realpixel = ((y + 1) * self.__width) - (x + 1)
+        elif self.__stripshape == "matrix":
+            x, y = pixel
+            realpixel = y * self.__width + x
+        return realpixel
 
     def atexit(self):
         """This will be called when the program exits"""
@@ -225,12 +312,3 @@ class PixelPi:
             self.clear()
             self.show()
             self.updatestatus = False
-
-    def show(self):
-        """Output to the strip."""
-
-        for pixel in range(self.__strip.numPixels()):
-            r, g, b, brightness = self.__pixels[pixel]
-            self.__strip.setPixelColorRGB(pixel, r, g, b)
-
-        self.__strip.show()
