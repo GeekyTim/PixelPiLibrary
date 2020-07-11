@@ -17,6 +17,8 @@ cd ~/PixelPiLibrary
 sudo python3 setup.py install
 ```
 
+Disable audio...
+
 ## Documentation & Support
 
 * Guides and tutorials - 

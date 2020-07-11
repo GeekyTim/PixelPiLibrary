@@ -23,7 +23,7 @@ Available strip types (note, setting the white element of LEDs is currently not 
 * `WS2811_BGR`
 """
 
-strip = PixelPi(1, 256, striptype='WS2812', brightness=0.2)
+strip = PixelPi(1, (8, 32), striptype='WS2812', stripshape="zmatrix", brightness=0.2)
 print(strip.type)
 
 while True:
@@ -45,9 +45,11 @@ while True:
     strip.clear()
     strip.show()
 
-    for pixel in range(strip.length):
-        # print("White: ", pixel)
-        strip.set_pixel(pixel, 255, 255, 255)
-        strip.show()
-        time.sleep(0.25)
-        strip.set_pixel(pixel, 0, 0, 0)
+    for y in range(strip.height):
+        for x in range(strip.width):
+            pixel = (x, y)
+            strip.set_pixel(pixel, 255, 255, 255)
+            strip.show()
+            time.sleep(0.25)
+            strip.set_pixel(pixel, 0, 0, 0)
+            strip.show()

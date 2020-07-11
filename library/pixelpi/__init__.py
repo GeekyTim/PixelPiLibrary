@@ -1,7 +1,7 @@
-__version__ = '0.0.2'
+__version__ = '0.0.4'
 
-import RPi.GPIO as GPIO
 import atexit
+from gpiozero import Button, OutputDevice
 from rpi_ws281x import PixelStrip, ws
 
 """
@@ -23,11 +23,9 @@ Available strip types (note, setting the white element of LEDs is currently not 
 * `WS2811_BRG`
 * `WS2811_BGR`
 """
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
 
 
-class PixelPi():
+class PixelPi:
     def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=1.0):
         """Initialise the LED Strip using the details given"""
 
@@ -38,7 +36,7 @@ class PixelPi():
             self.__onoffpin = 27
         elif strip == 2:
             self.__controlpin = 12
-            self.__channel = 1
+            self.__channel = 0
             self.__onoffpin = 4
         elif strip == 3:
             self.__controlpin = 21
@@ -46,7 +44,7 @@ class PixelPi():
             self.__onoffpin = 17
         elif strip == 4:
             self.__controlpin = 13
-            self.__channel = 0
+            self.__channel = 1
             self.__onoffpin = 22
         else:
             raise ValueError("The strip number must be between 1 and 4.")
@@ -72,72 +70,73 @@ class PixelPi():
         self.__stripshape = stripshape
         self.__striptype = supportedstriptypes[striptype]
 
-        if stripsize <= 0:
+        if type(stripsize) is tuple:
+            length, width = stripsize
+            striplength = length * width
+        else:
+            striplength = stripsize
+
+        if striplength <= 0:
             raise ValueError("The strip length needs to be 1 or more.")
-        self.__striplength = stripsize
+        self.__striplength = striplength
 
         if brightness < 0 or brightness > 1.0:
             raise ValueError("The brightness must be between 0.0 and 1.0")
         self.__brightness = int(brightness * 255)
 
+        # Create an array to hold the pixel colours and brightness
         self.__pixels = [[0, 0, 0, self.__brightness]] * self.__striplength
 
-        self.__freq_hz = 800000
-        self.__dma = 10
-        self.__invert = False
-
-        self.__strip = PixelStrip(self.__striplength, self.__controlpin, self.__freq_hz, self.__dma, self.__invert,
-                                  self.__brightness, self.__channel, self.__striptype)
+        self.__strip = PixelStrip(self.__striplength, self.__controlpin, 800000, 10, False, self.__brightness,
+                                  self.__channel, self.__striptype)
         self.__strip.begin()
 
         self.__clear_on_exit = True
 
-        GPIO.setup(self.__onoffpin, GPIO.OUT)
-        GPIO.output(self.__onoffpin, GPIO.LOW)
-        self.__stripactive = True
+        self.__statuspin = OutputDevice(self.__onoffpin, active_high=False, initial_value=False)
+        self.updatestatus = True
 
         self.clear()
 
         atexit.register(self.atexit)
 
-    def get_striplength(self):
+    @property
+    def length(self):
         """Gets how many LEDs are in the strip"""
         return self.__striplength
 
-    def get_striptype(self):
+    @property
+    def type(self):
         """Gets the strip type"""
         return self.__striptype
 
-    def get_stripnumber(self):
+    @property
+    def number(self):
         """Gets which output the strip is attached to"""
         return self.__strip
 
-    def get_pixel(self, pixel):
-        """Gets the RGB and brightness value of a specific pixel."""
-        if pixel > 0 and pixel < self.__striplength:
-            r, g, b, brightness = self.__pixels[pixel]
-        else:
-            r, g, b, brightness = [0, 0, 0, 0]
-
-        return r, g, b, brightness
-
-    def get_stripupdatestatus(self):
+    @property
+    def updatestatus(self):
         """Gets whether output is currently enabled for the strip"""
-        return self.__stripactive
+        return self.__statuspin.value == 1
 
-    def set_stripupdatestatus(self, status=True):
+    @updatestatus.setter
+    def updatestatus(self, status=True):
         """Sets whether the strip output is to be used
 
         status: On when True, Off when False
         """
         if status:
-            GPIO.output(self.__onoffpin, GPIO.LOW)
-            self.__stripactive = True
+            self.__statuspin.on()
         else:
-            GPIO.output(self.__onoffpin, GPIO.HIGH)
-            self.__stripactive = False
+            self.__statuspin.off()
 
-    def set_clearonexit(self, status=True):
+    @property
+    def clearonexit(self):
+        return self.__clear_on_exit
+
+    @clearonexit.setter
+    def clearonexit(self, status=True):
         """Set if the pixel strip should be cleared upon program exit."""
         self.__clear_on_exit = status
 
@@ -167,7 +166,17 @@ class PixelPi():
 
         self.__pixels[pixel][3] = brightness
 
-    def set_pixel(self, pixel, r, g, b, brightness=None):
+    @property
+    def get_pixel(self, lednum):
+        """Gets the RGB and brightness value of a specific pixel."""
+        if lednum > 0 and lednum < self.__striplength:
+            r, g, b, brightness = self.__pixels[lednum]
+        else:
+            r, g, b, brightness = [0, 0, 0, 0]
+
+        return r, g, b, brightness
+
+    def set_pixel(self, lednum, r, g, b, brightness=None):
         """Set the RGB value, and optionally brightness, of a single pixel.
 
         If you don't supply a brightness value, the last value will be kept.
@@ -178,13 +187,13 @@ class PixelPi():
         b: Blue: 0 to 255
         brightness: Brightness: 0.0 to 1.0
         """
-        if 0 <= pixel < self.__striplength:
+        if 0 <= lednum < self.__striplength:
             r, g, b = [int(c) & 0xff for c in (r, g, b)]
 
             if brightness is None:
-                brightness = self.__pixels[pixel][3]
+                brightness = self.__pixels[lednum][3]
 
-            self.__pixels[pixel] = [r, g, b, brightness]
+            self.__pixels[lednum] = [r, g, b, brightness]
 
     def set_all(self, r, g, b, brightness=None):
         """Set the RGB value and optionally brightness of all pixels in the strip.
@@ -198,12 +207,12 @@ class PixelPi():
         """
 
         for pixel in range(self.__striplength):
-            self.set_pixel(pixel, r, g, b, brightness)
+            self.pixel(pixel, r, g, b, brightness)
 
-    def set_sequence(self, sequence):
-        """Set RGB values from a an FX sequence."""
-        for index, rgb in sequence:
-            self.set_pixel(index, *rgb)
+    # def set_sequence(self, sequence):
+    #    """Set RGB values from a an FX sequence."""
+    #    for index, rgb in sequence:
+    #        self.set_pixel(index, *rgb)
 
     def clear(self):
         """Clear the pixel buffer."""
@@ -215,7 +224,7 @@ class PixelPi():
         if self.__clear_on_exit:
             self.clear()
             self.show()
-            self.set_stripupdatestatus(False)
+            self.updatestatus = False
 
     def show(self):
         """Output to the strip."""

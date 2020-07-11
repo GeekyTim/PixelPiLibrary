@@ -37,7 +37,7 @@ classifiers = ['Development Status :: 5 - Production/Stable',
 
 setup(
     name='pixelpi',
-    version='0.0.2',
+    version='0.0.4',
     author='Tim Richardson',
     author_email='tim@potton.me.uk',
     description="""Python library for driving ws2812 LEDs with a Raspberry Pi""",
@@ -47,5 +47,5 @@ setup(
     url='http://',
     classifiers=classifiers,
     packages=['pixelpi'],
-    install_requires=['RPi.GPIO', 'rpi_ws281x', 'numpy']
+    install_requires=['gpiozero', 'rpi_ws281x', 'numpy']
 )

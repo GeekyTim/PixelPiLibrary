@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from pixelpi import PixelPi
 import colorsys
 import time
+from pixelpi import PixelPi
 
 strip1 = PixelPi(1, 256, striptype='WS2812', brightness=0.2)
 strip2 = PixelPi(2, 64, striptype='SK6812_GRBW', brightness=0.2)
@@ -18,7 +18,7 @@ hue = 0
 
 while True:
     hue = int(time.time() * 100) % 360
-    for x in range(strip1.get_striplength()):
+    for x in range(strip1.length()):
         offset = x * spacing
         h = ((hue + offset) % 360) / 360.0
         r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(h, 1.0, 1.0)]
