@@ -1,6 +1,7 @@
 __version__ = '0.0.4'
 
 import atexit
+from PIL import Image
 from gpiozero import Button, OutputDevice
 from rpi_ws281x import PixelStrip, ws
 
@@ -62,8 +63,7 @@ class PixelPi:
         # The strip type
         # --------------
         if striptype not in self.striptypes:
-            raise ValueError(
-                "This strip type is not supported.")
+            raise ValueError("This strip type is not supported.")
         self.__striptype = striptype
 
         supportedstriptypes = {}
@@ -131,7 +131,6 @@ class PixelPi:
         # -------------------------------
         # Always clear the pixels on exit
         # -------------------------------
-        self.__clear_on_exit = True
         atexit.register(self.atexit)
 
         # -------------------------------------------------------------------
@@ -186,15 +185,6 @@ class PixelPi:
         else:
             self.__statuspin.off()
 
-    @property
-    def clearonexit(self):
-        return self.__clear_on_exit
-
-    @clearonexit.setter
-    def clearonexit(self, status=True):
-        """Set if the pixel strip should be cleared upon program exit."""
-        self.__clear_on_exit = status
-
     def set_brightness_all(self, brightness):
         """Set the brightness of all pixels in the strip.
 
@@ -204,7 +194,7 @@ class PixelPi:
             raise ValueError('Brightness should be between 0.0 and 1.0')
 
         for pixel in range(self.__striplength):
-            self.__pixels[pixel][3] = brightness
+            self.__pixels[pixel][3] = int(brightness * 255)
 
     def set_brightness_pixel(self, pixel, brightness):
         """Set the brightness of all pixels.
@@ -212,20 +202,23 @@ class PixelPi:
         pixel: The pixel number in the strip
         brightness: Brightness: 0.0 to 1.0
         """
+        pixelnumber = self.__translate(pixel)
 
-        if pixel < 0 or pixel > self.__striplength:
+        if 0 <= pixelnumber < self.__striplength:
             raise ValueError('The pixel index is out of range.')
 
         if brightness < 0 or brightness > 1:
             raise ValueError('Brightness should be between 0.0 and 1.0')
 
-        self.__pixels[pixel][3] = brightness
+        self.__pixels[pixel][3] = int(brightness * 255)
 
     @property
     def get_pixel(self, pixel):
         """Gets the RGB and brightness value of a specific pixel."""
-        if pixel > 0 and pixel < self.__striplength:
-            r, g, b, brightness = self.__pixels[pixel]
+        pixelnumber = self.__translate(pixel)
+
+        if 0 <= pixelnumber < self.__striplength:
+            r, g, b, brightness = self.__pixels[pixelnumber]
         else:
             r, g, b, brightness = [0, 0, 0, 0]
 
@@ -242,15 +235,15 @@ class PixelPi:
         b: Blue: 0 to 255
         brightness: Brightness: 0.0 to 1.0
         """
-        if 0 <= self.__translate(pixel) < self.__striplength:
+        pixelnumber = self.__translate(pixel)
+
+        if 0 <= pixelnumber < self.__striplength:
             r, g, b = [int(c) & 0xff for c in (r, g, b)]
 
             if brightness is None:
-                brightness = self.__pixels[self.__translate(pixel)][3]
+                brightness = self.__pixels[pixelnumber][3]
 
-            realpixel = self.__translate(pixel)
-            if realpixel >= 0:
-                self.__pixels[realpixel] = [r, g, b, brightness]
+            self.__pixels[pixelnumber] = [r, g, b, brightness]
 
     def __fast_set_pixel(self, pixel, r, g, b, brightness=None):
         """Does not use the translate pixel"""
@@ -275,6 +268,24 @@ class PixelPi:
         for pixel in range(self.__striplength):
             self.__fast_set_pixel(pixel, r, g, b, brightness)
 
+    def set_image(self, image, position=(0, 0)):
+        if image.mode != 'RGB':
+            raise ValueError("The image must be in RGB format.")
+
+        px, py = position
+
+        imagewidth, imageheight = image.size
+        width = min(imagewidth, self.width)
+        height = min(imageheight, self.height)
+
+        pixel_values = list(image.getdata())
+
+        for y in range(height):
+            for x in range(width):
+                r, g, b = pixel_values[x + y * 8]
+                self.set_pixel((px + x, py + y), r, g, b)
+        self.show()
+
     def clear(self):
         """Clear the pixel buffer."""
         for pixel in range(self.__striplength):
@@ -292,23 +303,25 @@ class PixelPi:
 
         realpixel = -1
         if self.__stripshape == "straight" or type(pixel) is not tuple:
-            realpixel = pixel
+            if 0 <= pixel < self.__length:
+                realpixel = pixel
         elif self.__stripshape == "reverse":
-            realpixel = self.__striplength - pixel
+            if 0 <= pixel < self.__length:
+                realpixel = self.__striplength - pixel
         elif self.__stripshape == "zmatrix":
             x, y = pixel
-            if y % 2 == 0:
-                realpixel = (y * self.__width) + x
-            else:
-                realpixel = ((y + 1) * self.__width) - (x + 1)
+            if 0 <= x < self.__width and 0 <= y <= self.__height:
+                if y % 2 == 0:
+                    realpixel = (y * self.__width) + x
+                else:
+                    realpixel = ((y + 1) * self.__width) - (x + 1)
         elif self.__stripshape == "matrix":
             x, y = pixel
-            realpixel = y * self.__width + x
+            if 0 <= x < self.__width and 0 <= y <= self.__height:
+                realpixel = y * self.__width + x
         return realpixel
 
     def atexit(self):
         """This will be called when the program exits"""
-        if self.__clear_on_exit:
-            self.clear()
-            self.show()
-            self.updatestatus = False
+        self.clear()
+        self.show()
