@@ -14,7 +14,7 @@ The library has been designed to only work with Python 3.
 cd ~
 git clone http://github.com/geekytim/PixelPiLibrary
 cd ~/PixelPiLibrary
-sudo python3 setup.py install
+sudo bash install.sh
 ```
 
 Disable audio...

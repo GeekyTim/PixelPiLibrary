@@ -47,5 +47,5 @@ setup(
     url='http://',
     classifiers=classifiers,
     packages=['pixelpi'],
-    install_requires=['gpiozero', 'rpi_ws281x', 'numpy']
+    install_requires=['rpi.gpio', 'gpiozero', 'rpi_ws281x', 'numpy', 'Pillow']
 )
