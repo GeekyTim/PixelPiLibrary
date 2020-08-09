@@ -1,4 +1,4 @@
-__version__ = '0.0.4'
+__version__ = '0.0.45'
 
 import atexit
 from PIL import Image
@@ -315,10 +315,10 @@ class PixelPi:
 
         realpixel = -1
         if self.__stripshape == "straight" or type(pixel) is not tuple:
-            if 0 <= pixel < self.__length:
+            if 0 <= pixel < self.__striplength:
                 realpixel = pixel
         elif self.__stripshape == "reverse":
-            if 0 <= pixel < self.__length:
+            if 0 <= pixel < self.__striplength:
                 realpixel = self.__striplength - pixel
         elif self.__stripshape == "zmatrix":
             x, y = pixel
