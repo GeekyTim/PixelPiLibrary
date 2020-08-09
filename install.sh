@@ -10,7 +10,7 @@ WORKING_DIR=`pwd`
 
 apt update
 apt install -y python3-pip
-pip3 install rpi.gpio rpi_ws281x
+pip3 install rpi.gpio rpi_ws281x numpy gpiozero pillow
 
 cd $WORKING_DIR/library
 sudo python3 setup.py install

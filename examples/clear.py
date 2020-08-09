@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from pixelpi import PixelPi
 import colorsys
 import time
+from pixelpi import PixelPi
 
 """
 Available strip types (note, setting the white element of LEDs is currently not supported):
@@ -24,7 +24,10 @@ Available strip types (note, setting the white element of LEDs is currently not 
 * `WS2811_BGR`
 """
 
+strip = PixelPi(1, 300, striptype='WS2811_GRB', brightness=0.2)
+strip = PixelPi(2, 300, striptype='WS2811_GRB', brightness=0.2)
 strip = PixelPi(3, 300, striptype='WS2811_GRB', brightness=0.2)
+strip = PixelPi(4, 300, striptype='WS2811_GRB', brightness=0.2)
 
 strip.clear()
 strip.show()

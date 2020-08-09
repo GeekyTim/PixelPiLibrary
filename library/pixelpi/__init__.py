@@ -286,6 +286,18 @@ class PixelPi:
                 self.set_pixel((px + x, py + y), r, g, b)
         self.show()
 
+    @property
+    def get_sequence(self):
+        return self.__pixels
+
+    def set_sequence(self, array):
+        size = np.shape(array)
+        if size[1] != 3:
+            raise ValueError("The array size must be strip_length by 3.")
+
+        for pixel in range(min(self.__striplength, size[0])):
+            self.__pixels[pixel][0:3] = array[pixel]
+
     def clear(self):
         """Clear the pixel buffer."""
         for pixel in range(self.__striplength):
