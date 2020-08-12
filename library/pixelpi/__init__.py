@@ -1,6 +1,7 @@
-__version__ = '0.0.45'
+__version__ = '0.1.0'
 
 import atexit
+import numpy
 from PIL import Image
 from gpiozero import Button, OutputDevice
 from rpi_ws281x import PixelStrip, ws
@@ -32,9 +33,25 @@ class PixelPi:
                   "WS2811_BRG", "WS2811_BGR"]
     stripshapes = ["straight", "zmatrix", "matrix", "reverse"]
     stripmatrixshapes = ["zmatrix", "matrix"]
+    stripstringshapes = ["straight", "reverse"]
 
-    def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=1.0):
-        """Initialise the LED Strip using the details given"""
+    ROTATE_LIST = ["LEFT", "RIGHT", "UP", "DOWN"]
+
+    def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=255):
+        """
+		Initialise the LED Strip using the details given
+		
+        :param strip: Which terminal the strip is attached to (1-4)
+        :param stripsize: The size of the strip - either length for a string, or (width, height) for matricees
+        :param stripshape: The 'shape' of the strip, if required:
+                           "straight" - a pixel string
+                           "zmatrix" - matrix where the pixels in the first row go left to right,
+                                       the next one right to left
+                           "matrix" - a normal matrix where the pixel order goes left to right
+                           "reverse" - a pixel string which starts at the opposite end
+        :param striptype: The strip type - one of the supported strip types
+        :param brightness: The defailt brightness for pixels (0-255)
+        """
 
         # ---------------------------------------------
         # Which strip connection is being used (1 to 4)
@@ -108,18 +125,17 @@ class PixelPi:
         # -----------------------------------
         # The default brightness at the start
         # -----------------------------------
-        if brightness < 0 or brightness > 1.0:
-            raise ValueError("The brightness must be between 0.0 and 1.0")
-        self.__brightness = int(brightness * 255)
+        self.__checkBrightness(brightness)
+        self.__brightness = brightness
 
-        # -------------------------------------------------
-        # An array to hold the pixel colours and brightness
-        # -------------------------------------------------
+        # -----------------------------------------------
+        # A list to hold the pixel colours and brightness
+        # -----------------------------------------------
         self.__pixels = [[0, 0, 0, self.__brightness]] * self.__striplength
 
-        # ---------------------------
-        # Set up the rpi_ws281x strip
-        # ---------------------------
+        # ----------------------------
+        # Set up the rpi_ws281x object
+        # ----------------------------
         self.__strip = PixelStrip(self.__striplength, self.__controlpin, 800000, 10, False, self.__brightness,
                                   self.__channel, self.__internalstriptype)
 
@@ -137,84 +153,105 @@ class PixelPi:
         # Set up the pin which defines whether the strip is written to or not
         # -------------------------------------------------------------------
         self.__statuspin = OutputDevice(self.__onoffpin, active_high=False, initial_value=False)
-        self.updatestatus = True
+        self.updateStatus = True
 
         # ---------------
         # Clear the strip
         # ---------------
-        self.clear()
+        self.clearStrip()
 
     @property
-    def length(self):
-        """Gets how many LEDs are in the strip"""
+    def getLength(self):
+        """
+        Gets how many LEDs are in the strip
+        """
         return self.__striplength
 
     @property
-    def width(self):
-        """Returns the width of the matrix"""
+    def getWidth(self):
+        """
+        Returns the getWidth of the matrix
+        """
         return self.__width
 
     @property
-    def height(self):
-        """Returns the height of the matrix"""
+    def getHeight(self):
+        """
+        Returns the getHeight of the matrix
+        """
         return self.__height
 
     @property
-    def type(self):
-        """Gets the strip type"""
+    def getStripType(self):
+        """
+        Gets the strip type
+        """
         return self.__striptype
 
     @property
-    def number(self):
-        """Gets which output the strip is attached to"""
+    def getStripNumber(self):
+        """
+        Gets which output the strip is attached to
+        """
         return self.__strip
 
     @property
-    def updatestatus(self):
-        """Gets whether output is currently enabled for the strip"""
+    def updateStatus(self):
+        """
+        Gets whether output is currently enabled for the strip
+        """
         return self.__statuspin.value == 1
 
-    @updatestatus.setter
-    def updatestatus(self, status=True):
-        """Sets whether the strip output is to be used
+    @updateStatus.setter
+    def updateStatus(self, status=True):
+        """
+        Sets whether the strip output is to be used
 
-        status: On when True, Off when False
+        :param status:  On when True, Off when False
         """
         if status:
             self.__statuspin.on()
         else:
             self.__statuspin.off()
 
-    def set_brightness_all(self, brightness):
-        """Set the brightness of all pixels in the strip.
-
-        brightness: Brightness: 0.0 to 1.0
+    def __checkBrightness(self, brightness):
         """
-        if brightness < 0 or brightness > 1:
-            raise ValueError('Brightness should be between 0.0 and 1.0')
+        Checks whether the brightness value given is within range (0-255)
 
-        for pixel in range(self.__striplength):
-            self.__pixels[pixel][3] = int(brightness * 255)
-
-    def set_brightness_pixel(self, pixel, brightness):
-        """Set the brightness of all pixels.
-
-        pixel: The pixel number in the strip
-        brightness: Brightness: 0.0 to 1.0
+        :param brightness:
         """
-        pixelnumber = self.__translate(pixel)
+        if brightness != None:
+            if 0 < brightness > 255:
+                raise ValueError("Brightness must be between 0 and 255")
 
-        if 0 <= pixelnumber < self.__striplength:
-            raise ValueError('The pixel index is out of range.')
+    def setBrightness(self, brightness, pixel=None):
+        """
+        Set the brightness of pixels in the strip.
 
-        if brightness < 0 or brightness > 1:
-            raise ValueError('Brightness should be between 0.0 and 1.0')
+        :param brightness: 0 to 255
+        :param pixel: If defined, only set that pixel, otherwise set all
+        """
+        self.__checkBrightness(brightness)
 
-        self.__pixels[pixel][3] = int(brightness * 255)
+        if pixel == None:
+            for pixel in range(self.__striplength):
+                self.__pixels[pixel][3] = brightness
+        else:
+            pixelnumber = self.__translate(pixel)
+
+            if 0 <= pixelnumber < self.__striplength:
+                raise ValueError('The pixel index is out of range.')
+
+            self.__pixels[pixel][3] = brightness
 
     @property
-    def get_pixel(self, pixel):
-        """Gets the RGB and brightness value of a specific pixel."""
+    def getPixel(self, pixel):
+        """
+        Gets the RGB and brightness value of a specific pixel.
+
+        :param pixel: the pixel location, either the pixel count from the start, or the x,y matrix location
+        :return: r, g, b, brightness
+        """
         pixelnumber = self.__translate(pixel)
 
         if 0 <= pixelnumber < self.__striplength:
@@ -224,94 +261,154 @@ class PixelPi:
 
         return r, g, b, brightness
 
-    def set_pixel(self, pixel, r, g, b, brightness=None):
-        """Set the RGB value, and optionally brightness, of a single pixel.
+    def setPixel(self, r, g, b, brightness=None, pixel=None):
+        """
+        Set the RGB value, and optionally brightness, of a single pixel.
 
         If you don't supply a brightness value, the last value will be kept.
+        If you don't define the pixel, all will be set
 
-        pixel: The pixel position in the strip
-        r: Red: 0 to 255
-        g: Green: 0 to 255
-        b: Blue: 0 to 255
-        brightness: Brightness: 0.0 to 1.0
+        :param r: Red: 0 to 255
+        :param g:  Green: 0 to 255
+        :param b:  Blue: 0 to 255
+        :param brightness:  Brightness: 0 to 255 or None to take the default
+        :param pixel: The pixel location or None to set all
         """
-        pixelnumber = self.__translate(pixel)
+        self.__checkBrightness(brightness)
 
-        if 0 <= pixelnumber < self.__striplength:
-            r, g, b = [int(c) & 0xff for c in (r, g, b)]
-
+        if pixel == None:
             if brightness is None:
-                brightness = self.__pixels[pixelnumber][3]
+                brightness = self.__brightness
 
-            self.__pixels[pixelnumber] = [r, g, b, brightness]
+            self.__pixels = [[r, g, b, brightness]] * self.__striplength
+        else:
+            pixelnumber = self.__translate(pixel)
 
-    def __fast_set_pixel(self, pixel, r, g, b, brightness=None):
-        """Does not use the translate pixel"""
-        if 0 <= pixel < self.__striplength:
-            r, g, b = [int(c) & 0xff for c in (r, g, b)]
+            if 0 <= pixelnumber < self.__striplength:
+                if brightness is None:
+                    brightness = self.__pixels[pixelnumber][3]
 
-            if brightness is None:
-                brightness = self.__pixels[self.__translate(pixel)][3]
+                self.__pixels[pixelnumber] = [r, g, b, brightness]
 
-            self.__pixels[pixel] = [r, g, b, brightness]
-
-    def set_all(self, r, g, b, brightness=None):
-        """Set the RGB value and optionally brightness of all pixels in the strip.
-
-        If you don't supply a brightness value, the last value set for each pixel be kept.
-
-        r: Amount of red: 0 to 255
-        g: Amount of green: 0 to 255
-        b: Amount of blue: 0 to 255
-        brightness: Brightness: 0.0 to 1.0
+    def setImage(self, image, position=(0, 0)):
         """
-        for pixel in range(self.__striplength):
-            self.__fast_set_pixel(pixel, r, g, b, brightness)
+        Plots an RGB image to the strip (or matrix)
 
-    def set_image(self, image, position=(0, 0)):
+        :param image: An image in RGB format (see PILLOW library)
+        :param position: The location on the strip
+        """
         if image.mode != 'RGB':
             raise ValueError("The image must be in RGB format.")
 
-        px, py = position
-
         imagewidth, imageheight = image.size
-        width = min(imagewidth, self.width)
-        height = min(imageheight, self.height)
+
+        if self.__stripshape in self.stripmatrixshapes:
+            if type(position) is not tuple:
+                raise ValueError("A matrix shape has been defined, but the size is not a tuple (i.e. (x, y)).")
+            px, py = position
+            width = min(imagewidth, self.__width)
+            height = min(imageheight, self.__height)
+
+
+        else:
+            if type(position) is tuple:
+                raise ValueError("A non-matrix shape has been defined, but the size is a tuple.")
+            px, py = position, 1
 
         pixel_values = list(image.getdata())
 
         for y in range(height):
             for x in range(width):
                 r, g, b = pixel_values[x + y * 8]
-                self.set_pixel((px + x, py + y), r, g, b)
-        self.show()
+                self.setPixel((px + x, py + y), r, g, b)
 
     @property
-    def get_sequence(self):
+    def getStripPattern(self):
+        """
+        Returns the RGB and brightness of each pixel in the strip as a list
+
+        :return: The strip definition
+        """
         return self.__pixels
 
-    def set_sequence(self, array):
-        size = np.shape(array)
-        if size[1] != 3:
-            raise ValueError("The array size must be strip_length by 3.")
+    def __checkStrip(self, pattern):
+        """
+        Checks whether the pattern passed in is valid
 
-        for pixel in range(min(self.__striplength, size[0])):
-            self.__pixels[pixel][0:3] = array[pixel]
+        :param pattern: A list of the RGB and brighness values of each pixel in the strip
+        """
+        if len(pattern) == 0:
+            raise ValueError("The sequence must have elements")
+        if len(pattern[0]) != 4:
+            raise ValueError("Each element of the sequence must have four elements (r, g, b, brightness)")
 
-    def clear(self):
-        """Clear the pixel buffer."""
+    def setStripPattern(self, pattern):
+        """
+        Sets the RGB and brightness of the strip using the pattern passed in
+
+        :param pattern:
+        """
+        self.__checkStrip(pattern)
+
+        for pixelnumber in range(min(self.__striplength, len(pattern))):
+            self.__pixels[pixelnumber] = pattern[pixelnumber]
+
+    def rotateStrip(self, direction, pixels):
+        """
+        Rotates the pixels on the strip
+
+        :param direction: The direction the strip should rotate (LEFT, RIGHT, UP, DOWN)
+        :param pixels: The number of pixels the strip should rotate
+        """
+        direction = direction.upper()
+        if direction not in self.ROTATE_LIST:
+            raise ValueError("The rotation direction must be one of LEFT, RIGHT, UP or DOWN.")
+
+        if self.__stripshape in stripstringshapes:
+            if self.__striplength < pixels or pixels <= 0:
+                raise ValueError("The pixels value must be positive and shorter than the strip length.")
+
+            if direction == "LEFT" or direction == "UP":
+                for _ in range(pixels):
+                    self.__pixels.insert(0, self.__pixels[self.__striplength - 1])
+                    self.__pixels.pop(self.__striplength)
+            else:
+                for _ in range(pixels):
+                    self.__pixels.append(self.__pixels[0])
+                    self.__pixels.pop(0)
+
+    def reflectStrip(self, mirror="VERTICAL"):
+        """
+        Reflects the strip
+
+        :param mirror: Use mirror for matrices to indicate whether they should be reflected in the vertical or
+                       horizontal axis
+        """
+        if self.__stripshape in stripmatrixshapes:
+            _ = 0
+        else:
+            self.__pixels.reverse()
+
+    def clearStrip(self):
+        """
+        Clears the pixel buffer, leaving the brighness as is
+        """
         for pixel in range(self.__striplength):
             self.__pixels[pixel][0:3] = [0, 0, 0]
 
-    def show(self):
-        """Output to the strip."""
+    def showStrip(self):
+        """
+        Output to the strip to the LEDs.
+        """
         for pixel in range(self.__strip.numPixels()):
             r, g, b, brightness = self.__pixels[pixel]
             self.__strip.setPixelColorRGB(pixel, r, g, b)
         self.__strip.show()
 
     def __translate(self, pixel):
-        """Translates matrix co-ordinates for various different shapes"""
+        """
+        Translates matrix co-ordinates for various different shapes
+        """
 
         realpixel = -1
         if self.__stripshape == "straight" or type(pixel) is not tuple:
@@ -334,6 +431,8 @@ class PixelPi:
         return realpixel
 
     def atexit(self):
-        """This will be called when the program exits"""
-        self.clear()
-        self.show()
+        """
+        This will be called when the program exits to clear the LEDs
+        """
+        self.clearStrip()
+        self.showStrip()

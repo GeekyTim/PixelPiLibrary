@@ -23,31 +23,37 @@ Available strip types (note, setting the white element of LEDs is currently not 
 * `WS2811_BGR`
 """
 
-strip = PixelPi(1, 256, striptype='WS2812', brightness=0.2)
-print(strip.type)
-
+strip = PixelPi(2, 256, striptype='WS2812', brightness=40)
+print(strip.getStripType)
+print(strip.getLength)
+print(strip.getStripPattern)
 while True:
     print("Red")
-    strip.set_all(255, 0, 0)
-    strip.show()
+    strip.setPixel(255, 0, 0)
+    strip.showStrip()
+    print(strip.getStripPattern)
     time.sleep(1)
 
     print("Green")
-    strip.set_all(0, 255, 0)
-    strip.show()
+    strip.setPixel(0, 255, 0)
+    strip.showStrip()
+    print(strip.getStripPattern)
     time.sleep(1)
 
     print("Blue")
-    strip.set_all(0, 0, 255)
-    strip.show()
+    strip.setPixel(0, 0, 255)
+    strip.showStrip()
+    print(strip.getStripPattern)
     time.sleep(1)
 
-    strip.clear()
-    strip.show()
+    strip.clearStrip()
+    strip.showStrip()
+    print(strip.getStripPattern)
 
-    for pixel in range(strip.length):
+    for pixel in range(strip.getLength):
         # print("White: ", pixel)
-        strip.set_pixel(pixel, 255, 255, 255)
-        strip.show()
+        strip.setPixel(255, 255, 255, pixel=pixel)
+        strip.showStrip()
+        print(strip.getStripPattern)
         time.sleep(0.25)
-        strip.set_pixel(pixel, 0, 0, 0)
+        strip.setPixel(0, 0, 0, pixel=pixel)
