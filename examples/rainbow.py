@@ -25,7 +25,7 @@ while True:
         # strip4.setLED(x, r, g, b)
 
     strip1.showStrip()
-    # strip2.showStrip()more
+    # strip2.showStrip()
     # strip3.showStrip()
     # strip4.showStrip()
     time.sleep(0.001)
