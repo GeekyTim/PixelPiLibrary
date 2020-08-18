@@ -162,7 +162,7 @@ class Strip:
         # Set up the pin which defines whether the strip is written to or not
         # -------------------------------------------------------------------
         self.__statuspin = OutputDevice(self.__onoffpin, active_high=False, initial_value=False)
-        self.updateStatus = True
+        self.setUpdateStatus(True)
 
         # ---------------
         # Clear the strip

@@ -3,9 +3,9 @@
 import time
 
 import colorsys
-from pixelpi import PixelPi
+from pixelpi import Strip
 
-strip1 = PixelPi(2, 300, stripshape='straight', striptype='WS2811_GRB', brightness=50)
+strip1 = Strip(2, 300, stripshape='straight', striptype='WS2811_GRB', brightness=50)
 # strip2 = Strip(2, 10, striptype='SK6812_GRBW', brightness=50)
 # strip3 = Strip(3, 10, striptype='WS2811_RGB', brightness=50)
 # strip4 = Strip(4, 10, striptype='WS2811_RGB', brightness=50)
