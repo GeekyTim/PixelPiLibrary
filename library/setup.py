@@ -27,7 +27,7 @@ try:
 except ImportError:
     from distutils.core import setup
 
-classifiers = ['Development Status :: 5 - Production/Stable',
+classifiers = ['Development Status :: 4 - Beta',
                'Operating System :: POSIX :: Linux',
                'License :: OSI Approved :: MIT License',
                'Intended Audience :: Developers',
@@ -37,14 +37,14 @@ classifiers = ['Development Status :: 5 - Production/Stable',
 
 setup(
     name='pixelpi',
-    version='0.1.00',
+    version='0.1.0',
     author='Tim Richardson',
     author_email='tim@potton.me.uk',
     description="""Python library for driving ws2812 LEDs with a Raspberry Pi""",
     long_description=open('README.rst').read() + '\n' + open('CHANGELOG.txt').read(),
     license='MIT',
     keywords='Raspberry Pi LED WS2812',
-    url='http://',
+    url='http://github.com/GeekyTim/PixelPiLibrary',
     classifiers=classifiers,
     packages=['pixelpi'],
     install_requires=['rpi.gpio', 'gpiozero', 'rpi_ws281x', 'numpy', 'Pillow']

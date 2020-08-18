@@ -1,10 +1,10 @@
-# PixelPi Library
+# Strip Library
 
-This PixelPi Library is a fork of the Pimoroni (http://pimoroni.com) Plasma code (https://github.com/pimoroni/plasma), massively simplified and extensively modified to be used with the PixelPi Raspberry Pi 'small' HAT from Hut 8 Designs.
+This Strip Library is a fork of the Pimoroni (http://pimoroni.com) Plasma code (https://github.com/pimoroni/plasma), massively simplified and extensively modified to be used with the Strip Raspberry Pi 'small' HAT from Hut 8 Designs.
 
 ## Compatible Products
 
-. The PixelPi From Hut 8 Designs
+. The Strip From Hut 8 Designs
 
 ## Installing
 

@@ -1,10 +1,11 @@
+from time import sleep
+
 from PIL import Image
 from pixelpi import PixelPi
-from time import sleep
 
 im = Image.open("image.png").convert(mode='RGB', colors=256)
 
-# strip1 = PixelPi(2, (8, 8), striptype='SK6812_GRBW', stripshape="matrix", brightness=0.2)
+# strip1 = Strip(2, (8, 8), striptype='SK6812_GRBW', stripshape="matrix", brightness=0.2)
 strip2 = PixelPi(2, (8, 32), striptype='WS2812', stripshape="zmatrix", brightness=0.2)
 
 i = 0

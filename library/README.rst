@@ -1,4 +1,4 @@
-PixelPi Driver Board
+Strip Driver Board
 ====================
 
 
@@ -26,7 +26,7 @@ Installing the Library
 
 
 
-Using PixelPi
+Using Strip
 ~~~~~~~~~~~~~
 
 Examples can be found in:

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import time
+
 from pixelpi import PixelPi
 
 """
@@ -29,19 +30,19 @@ print(strip.getLength)
 print(strip.getStripPattern)
 while True:
     print("Red")
-    strip.setPixel(255, 0, 0)
+    strip.setLED(255, 0, 0)
     strip.showStrip()
     print(strip.getStripPattern)
     time.sleep(1)
 
     print("Green")
-    strip.setPixel(0, 255, 0)
+    strip.setLED(0, 255, 0)
     strip.showStrip()
     print(strip.getStripPattern)
     time.sleep(1)
 
     print("Blue")
-    strip.setPixel(0, 0, 255)
+    strip.setLED(0, 0, 255)
     strip.showStrip()
     print(strip.getStripPattern)
     time.sleep(1)
@@ -51,9 +52,9 @@ while True:
     print(strip.getStripPattern)
 
     for pixel in range(strip.getLength):
-        # print("White: ", pixel)
-        strip.setPixel(255, 255, 255, pixel=pixel)
+        # print("White: ", LED)
+        strip.setLED(255, 255, 255, LED=pixel)
         strip.showStrip()
         print(strip.getStripPattern)
         time.sleep(0.25)
-        strip.setPixel(0, 0, 0, pixel=pixel)
+        strip.setLED(0, 0, 0, LED=pixel)
