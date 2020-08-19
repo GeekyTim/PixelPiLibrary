@@ -4,9 +4,7 @@
    :synopsis: Control of WS281x LEDs with a Raspberry Pi
 """
 
-__version__ = '0.1.1'
-
-import atexit
+__version__ = '0.1.5'
 
 from gpiozero import OutputDevice
 from rpi_ws281x import PixelStrip, ws
@@ -14,83 +12,83 @@ from rpi_ws281x import PixelStrip, ws
 
 class Strip:
     """
-    Creates an LED Strip with the provided configuration.
+    Creates an led Strip with the provided configuration.
 
-    :type strip: int
-    :param strip:
-        Which terminal the strip is attached to (1-4).
+    :type terminal: int
+    :param terminal:
+        Which terminal the terminal is attached to (1-4).
 
-    :type stripsize: int
-    :param stripsize:
-        The size of the strip - either length for a string, or (width, height) for matrices.
+    :type size: int
+    :param size:
+        The size of the terminal - either length for a string, or (width, height) for matrices.
 
-    :type stripshape: str, optional
-    :param stripshape:
-        The 'shape' of the strip.
+    :type shape: str, optional
+    :param shape:
+        The 'shape' of the terminal.
 
-                       * :data:`straight` - A LED string (default)
-                       * :data:`reverse` - A LED string which starts at the opposite end
+                       * :data:`straight` - A led string (default)
+                       * :data:`reverse` - A led string which starts at the opposite end
                        * :data:`zmatrix` - A matrix where the pixels in the first row go left to right, the next one
                          right to left. i.e:
                          | 1 2 3 4
                          | 8 7 6 5
                          | 9 . . .
-                       * :data:`matrix` - a normal matrix where the LED order goes left to right. i.e:
+                       * :data:`matrix` - a normal matrix where the led order goes left to right. i.e:
                          | 1 2 3 4
                          | 5 6 7 8
                          | 9 . . .
 
-    :type striptype: str
-    :param striptype:
-        One of the supported strip types:
+    :type ledtype: str
+    :param ledtype:
+        One of the supported terminal types:
 
                       WS2812, SK6812, SK6812W, SK6812_RGBW, SK6812_RBGW, SK6812_GRBW, SK6812_GBRW, SK6812_BRGW,
                       SK6812_BGRW, WS2811_RGB, WS2811_RBG, WS2811_GRB, WS2811_GBR, WS2811_BRG, WS2811_BGR
 
-    :type brighness: int
+    :type brightness: int
     :param brightness:
         The default brightness for all pixels (0-255).
     """
 
-    striptypes = ["WS2812", "SK6812", "SK6812W", "SK6812_RGBW", "SK6812_RBGW", "SK6812_GRBW", "SK6812_GBRW",
-                  "SK6812_BRGW", "SK6812_BGRW", "WS2811_RGB", "WS2811_RBG", "WS2811_GRB", "WS2811_GBR",
-                  "WS2811_BRG", "WS2811_BGR"]
-    stripshapes = ["straight", "zmatrix", "matrix", "reverse"]
-    stripmatrixshapes = ["zmatrix", "matrix"]
-    stripstringshapes = ["straight", "reverse"]
+    ledtypeslist = ["WS2812", "SK6812", "SK6812W", "SK6812_RGBW", "SK6812_RBGW", "SK6812_GRBW", "SK6812_GBRW",
+                    "SK6812_BRGW", "SK6812_BGRW", "WS2811_RGB", "WS2811_RBG", "WS2811_GRB", "WS2811_GBR",
+                    "WS2811_BRG", "WS2811_BGR"]
+    matrixshapelist = ["zmatrix", "matrix"]
+    stringshapelist = ["straight", "reverse"]
+    allshapeslist = matrixshapelist + stringshapelist  # ["straight", "zmatrix", "matrix", "reverse"]
 
-    ROTATE_LIST = ["LEFT", "RIGHT", "UP", "DOWN"]
+    rotatelist = ["LEFT", "RIGHT", "UP", "DOWN"]
 
-    def __init__(self, strip, stripsize, stripshape='straight', striptype='WS2812', brightness=255):
+    def __init__(self, terminal, size, shape='straight', ledtype='WS2812', brightness=255):
         # ---------------------------------------------
-        # Which strip connection is being used (1 to 4)
+        # Which terminal connection is being used (1 to 4)
         # ---------------------------------------------
-        if strip == 1:
+        if terminal == 1:
             self.__controlpin = 10
             self.__channel = 0
             self.__onoffpin = 27
-        elif strip == 2:
+        elif terminal == 2:
             self.__controlpin = 12
             self.__channel = 0
             self.__onoffpin = 4
-        elif strip == 3:
+        elif terminal == 3:
             self.__controlpin = 21
             self.__channel = 0
             self.__onoffpin = 17
-        elif strip == 4:
+        elif terminal == 4:
             self.__controlpin = 13
             self.__channel = 1
             self.__onoffpin = 22
         else:
-            raise ValueError("The strip number must be between 1 and 4.")
-        self.__strip = strip
+            raise ValueError("The terminal number must be between 1 and 4.")
+        self.__stripnum = terminal
 
         # --------------
-        # The strip type
+        # The terminal type
         # --------------
-        if striptype not in self.striptypes:
-            raise ValueError("This strip type is not supported.")
-        self.__striptype = striptype
+        if ledtype not in self.ledtypeslist:
+            raise ValueError("This terminal type is not supported.")
+        self.__striptype = ledtype
 
         supportedstriptypes = {}
         for t in ws.__dict__:
@@ -98,47 +96,46 @@ class Strip:
                 k = t.replace('_STRIP', '')
                 v = getattr(ws, t)
                 supportedstriptypes[k] = v
-        self.__internalstriptype = supportedstriptypes[striptype]
+        self.__internalstriptype = supportedstriptypes[ledtype]
 
         # ---------------
-        # The strip shape
+        # The terminal shape
         # ---------------
-        if stripshape not in self.stripshapes:
-            raise ValueError("The strip shape is not supported.")
-        elif stripshape in self.stripmatrixshapes and type(stripsize) is not tuple:
+        if shape not in self.allshapeslist:
+            raise ValueError("The terminal shape is not supported.")
+        elif shape in self.matrixshapelist and type(size) is not tuple:
             raise ValueError("A matrix shape has been defined, but the size is not a tuple (i.e. (x, y)).")
-        elif stripshape not in self.stripmatrixshapes and type(stripsize) is tuple:
+        elif shape not in self.matrixshapelist and type(size) is tuple:
             raise ValueError("A non-matrix shape has been defined, but the size is a tuple.")
-        self.__stripshape = stripshape
+        self.__stripshape = shape
 
         # -----------------------------------------
-        # The size of the strip
+        # The size of the terminal
         # striplength is the total number of pixels
         # -----------------------------------------
-        if type(stripsize) is tuple:
-            if len(stripsize) != 2:
+        if type(size) is tuple:
+            if len(size) != 2:
                 raise ValueError("The matrix shape must be defined in width and length size (x, y) only.")
-            width, height = stripsize
+            width, height = size
             striplength = height * width
             self.__width = width
             self.__height = height
         else:
-            striplength = stripsize
+            striplength = size
             self.__width = 1
             self.__height = striplength
 
         if striplength <= 0:
-            raise ValueError("The strip length needs to be 1 or more.")
+            raise ValueError("The terminal length needs to be 1 or more.")
         self.__striplength = striplength
 
         # -----------------------------------
         # The default brightness at the start
         # -----------------------------------
-        self.__checkBrightness(brightness)
-        self.__brightness = brightness
+        self.__brightness = self.__checkBrightness(brightness)
 
         # -----------------------------------------------
-        # A list to hold the LED colours and brightness
+        # A list to hold the led colours and brightness
         # -----------------------------------------------
         self.__pixels = [[0, 0, 0, self.__brightness]] * self.__striplength
 
@@ -149,80 +146,75 @@ class Strip:
                                   self.__channel, self.__internalstriptype)
 
         # ---------------------
-        # Start the strip logic
+        # Start the terminal logic
         # ---------------------
         self.__strip.begin()
 
-        # -------------------------------
-        # Always clear the pixels on exit
-        # -------------------------------
-        atexit.register(self.__atexit)
-
         # -------------------------------------------------------------------
-        # Set up the pin which defines whether the strip is written to or not
+        # Set up the pin which defines whether the terminal is written to or not
         # -------------------------------------------------------------------
         self.__statuspin = OutputDevice(self.__onoffpin, active_high=False, initial_value=False)
-        self.setUpdateStatus(True)
+        self.updateStatus = True
 
         # ---------------
-        # Clear the strip
+        # Clear the terminal
         # ---------------
         self.clearStrip()
 
+    def __del__(self):
+        """Clears the terminal and disposes of the rpi_ws281x object"""
+        del self.__strip
+
     @property
     def getLength(self):
-        """Returns how many LEDs are in the strip."""
+        """Returns how many LEDs are in the strip/matrix."""
         return self.__striplength
 
     @property
     def getWidth(self):
-        """Returns the width of the matrix."""
+        """Returns the width of the matrix (1 if an LED string)."""
         return self.__width
 
     @property
     def getHeight(self):
-        """Returns the height of the matrix."""
+        """Returns the height of the matrix (or length of an LED string)."""
         return self.__height
 
     @property
     def getStripType(self):
-        """Returns the strip LED type."""
+        """Returns the set LED type."""
         return self.__striptype
 
     @property
     def getStripNumber(self):
-        """Returns terminal the strip is attached to."""
-        return self.__strip
+        """Returns terminal the LEDs are attached to."""
+        return self.__stripnum
 
     @property
-    def getStripPattern(self):
-        """Returns the RGB and brightness of each LED in the strip as a list."""
-        return self.__pixels
-
-    @property
-    def getUpdateStatus(self):
+    def updateStatus(self):
         """
-        Returns whether output is currently enabled for the strip.
+        Returns or sets whether output is currently enabled for the LEDs.
 
-        See setUpdateStatus() method.
+        When set to ``False``, the current LED pattern will remain unchanged even
+        if the pattern is changed and :class:`showStrip()` has been called.
+
+        :getter: Returns the status.
+        :setter: Sets the status.
+        :type: bool
         """
         return self.__statuspin.value == 1
 
-    def setUpdateStatus(self, status=True):
+    @updateStatus.setter
+    def updateStatus(self, status=True):
         """
-        Sets whether the strip output is to be used. When turned off, the current LED pattern will remain.
-
-        :type status: bool
-        :param status:
-            On when :data:`True`, Off when :data:`False`
+        The setter for updateStatus property.
         """
         if status:
             self.__statuspin.on()
         else:
             self.__statuspin.off()
 
-    @staticmethod
-    def __checkBrightness(brightness):
+    def __checkBrightness(self, brightness):
         """
         Checks whether the brightness value given is within range (0-255)
 
@@ -234,104 +226,144 @@ class Strip:
             if 0 < brightness > 255:
                 raise ValueError("Brightness must be between 0 and 255")
 
-    def setBrightness(self, brightness, pixel=None):
+        if brightness is None:
+            brightness = self.__brightness
+
+        return brightness
+
+    @staticmethod
+    def __checkRGB(rgb):
+        if type(rgb) is not tuple:
+            raise ValueError('The rgb value must be a tuple of the form (r, g, b).')
+        elif len(rgb) != 3:
+            raise ValueError('The rgb tuple must have three elements (r, g, b).')
+
+        red, green, blue = rgb
+
+        return red, green, blue
+
+    def setBrightness(self, brightness, led=None):
         """
-        Sets the brightness of one or more LEDs in the strip.
+        Sets the brightness of one or more LEDs in the terminal.
 
         :param brightness: 0 to 255
-        :param pixel: If defined, only set that LED, otherwise set all
+        :param led: If defined, only set that led, otherwise set all
         """
-        self.__checkBrightness(brightness)
+        brightness = self.__checkBrightness(brightness)
 
-        if pixel is None:
-            for pixel in range(self.__striplength):
-                self.__pixels[pixel][3] = brightness
+        if led is None:
+            for led in range(self.__striplength):
+                self.__pixels[led][3] = brightness
         else:
-            pixelnumber = self.__translate(pixel)
+            pixelnumber = self.__translate(led)
 
             if 0 <= pixelnumber < self.__striplength:
-                raise ValueError('The LED index is out of range.')
+                raise ValueError('The led index is out of range.')
 
-            self.__pixels[pixel][3] = brightness
+            self.__pixels[led][3] = brightness
 
-    def getLED(self, pixel):
+    def getLED(self, led=None):
         """
-        Gets the RGB and brightness value of a specific LED.
+        If ``led`` is supplied, returns the RGB and brightness values of a specific LED.
 
-        :param pixel: the LED location, either the LED count from the start, or the x,y matrix location
-        :return: r, g, b, brightness
+        If led is not supplied or set to ``None`` a list of red, green, blue and brightness values for each LED
+        is returned.
+
+        :type led: int, tuple or None
+        :param led: The led location, either the LED count from the start, or the x,y matrix location,
+            or if None, a list of all LEDs will be returned
+        :return: (red, green, blue, brightness) or a list of (red, green, blue, brightness)
         """
-        pixelnumber = self.__translate(pixel)
 
-        if 0 <= pixelnumber < self.__striplength:
-            r, g, b, brightness = self.__pixels[pixelnumber]
+        if led is None:
+            return self.__pixels
         else:
-            r, g, b, brightness = [0, 0, 0, 0]
+            pixelnumber = self.__translate(led)
 
-        return r, g, b, brightness
+            if 0 <= pixelnumber < self.__striplength:
+                r, g, b, brightness = self.__pixels[pixelnumber]
+            else:
+                r, g, b, brightness = [0, 0, 0, 0]
 
-    def setLED(self, r, g, b, LED=None, brightness=None):
+            return r, g, b, brightness
+
+    def setLED(self, led=None, rgb=None, brightness=None, image=None, pattern=None):
         """
         Sets the RGB value, and optionally brightness, of one or more LEDs.
 
-        If you don't define the LED, all LEDs will be set the defined colour.
+        If ``led`` is not supplied or set to ``None``, all LEDs will be set to the
+        defined colour and brightness.
 
-        If you are using a matrix, you can use either the LED count from the start, or the (x, y) location
+        If a matrix is being used, ``led`` can either be the LED count from the first LED,
+        or the (x, y) location.
 
-        If you don't supply a brightness value, the current LED brightness will be kept.
+        If a brightness value is not supplied, or set to ``None``, the current LED brightness
+        will be kept.
 
-        :param r: Red: 0 to 255
-        :param g:  Green: 0 to 255
-        :param b:  Blue: 0 to 255
+        :param pattern:
+        :param image:
+        :param rgb:
+        :type brightness: int
         :param brightness:  Brightness: 0 to 255 or None to take the default
-        :param LED: The pixel location or None to set all
+        :type led: int, typle or None
+        :param led: The led location or None to set all
         """
-        self.__checkBrightness(brightness)
 
-        if LED is None:
-            if brightness is None:
-                brightness = self.__brightness
-
-            self.__pixels = [[r, g, b, brightness]] * self.__striplength
+        if image is not None:
+            self.__setImage(image, position=led)
+        elif pattern is not None:
+            self.__setPattern(pattern)
+        elif led is None:
+            brightness = self.__checkBrightness(brightness)
+            red, green, blue = self.__checkRGB(rgb)
+            self.__pixels = [[red, green, blue, brightness]] * self.__striplength
         else:
-            pixelnumber = self.__translate(LED)
+            pixelnumber = self.__translate(led)
 
             if 0 <= pixelnumber < self.__striplength:
                 if brightness is None:
                     brightness = self.__pixels[pixelnumber][3]
 
-                self.__pixels[pixelnumber] = [r, g, b, brightness]
+                red, green, blue = self.__checkRGB(rgb)
+                self.__pixels[pixelnumber] = [red, green, blue, brightness]
 
-    def setImage(self, image, position=(0, 0)):
+    def __setImage(self, image, position=None):
         """
-        Plots an RGB image to the strip (or matrix)
+        Plots an RGB image to the matrix or string of LEDs.
+
+        :type image: RGB Format image
+        :type position: int, tuple or None
 
         :param image: An image in RGB format (see PILLOW library)
-        :param position: The location on the strip
+        :param position: The location on the matrix
         """
         if image.mode != 'RGB':
             raise ValueError("The image must be in RGB format.")
 
         imagewidth, imageheight = image.size
 
-        if self.__stripshape in self.stripmatrixshapes:
+        if self.__stripshape in self.matrixshapelist:
+            if position is None:
+                position = (0, 0)
             if type(position) is not tuple:
                 raise ValueError("A matrix shape has been defined, but the size is not a tuple (i.e. (x, y)).")
             px, py = position
             width = min(imagewidth, self.__width)
             height = min(imageheight, self.__height)
         else:
+            if position is None:
+                position = 0
             if type(position) is tuple:
                 raise ValueError("A non-matrix shape has been defined, but the size is a tuple.")
-            px, py = position, 1
+            px, py = position, 0
             width = 1
             height = min(imageheight, self.__height)
 
-        pixel_values = list(image.getdata())
+        imagecolours = list(image.getdata())
 
         for y in range(height):
             for x in range(width):
-                r, g, b = pixel_values[x + y * 8]
+                r, g, b = imagecolours[x + y * 8]
                 self.setLED((px + x, py + y), r, g, b)
 
     @staticmethod
@@ -339,16 +371,16 @@ class Strip:
         """
         Checks whether the pattern passed in is valid
 
-        :param pattern: A list of the RGB and brighness values of each LED in the strip
+        :param pattern: A list of the RGB and brightness values of each led in the terminal
         """
         if len(pattern) == 0:
             raise ValueError("The sequence must have elements")
         if len(pattern[0]) != 4:
-            raise ValueError("Each element of the sequence must have four elements (r, g, b, brightness)")
+            raise ValueError("Each element of the sequence must have four elements (red, green, blue, brightness)")
 
-    def setStripPattern(self, pattern):
+    def __setPattern(self, pattern):
         """
-        Sets the RGB and brightness of the strip using the pattern passed in
+        Sets the RGB and brightness of the terminal using the pattern passed in
 
         :param pattern:
         """
@@ -359,18 +391,18 @@ class Strip:
 
     def rotateStrip(self, direction, pixels):
         """
-        Rotates the pixels on the strip
+        Rotates the pixels on the terminal
 
-        :param direction: The direction the strip should rotate (LEFT, RIGHT, UP, DOWN)
-        :param pixels: The number of pixels the strip should rotate
+        :param direction: The direction the terminal should rotate (LEFT, RIGHT, UP, DOWN)
+        :param pixels: The number of pixels the terminal should rotate
         """
         direction = direction.upper()
-        if direction not in self.ROTATE_LIST:
+        if direction not in self.rotatelist:
             raise ValueError("The rotation direction must be one of LEFT, RIGHT, UP or DOWN.")
 
-        if self.__stripshape in self.stripstringshapes:
+        if self.__stripshape in self.stringshapelist:
             if self.__striplength < pixels or pixels <= 0:
-                raise ValueError("The pixels value must be positive and shorter than the strip length.")
+                raise ValueError("The pixels value must be positive and shorter than the terminal length.")
 
             if direction == "LEFT" or direction == "UP":
                 for _ in range(pixels):
@@ -383,26 +415,26 @@ class Strip:
 
     def reflectStrip(self, mirror="VERTICAL"):
         """
-        Reflects the strip
+        Reflects the terminal
 
         :param mirror: Use mirror for matrices to indicate whether they should be reflected in the vertical or
                        horizontal axis
         """
-        if self.__stripshape in self.stripmatrixshapes:
+        if self.__stripshape in self.matrixshapelist:
             _ = 0
         else:
             self.__pixels.reverse()
 
     def clearStrip(self):
         """
-        Clears the LED buffer, leaving the brighness as is
+        Clears the led buffer, leaving the brightness as is
         """
         for pixel in range(self.__striplength):
             self.__pixels[pixel][0:3] = [0, 0, 0]
 
     def showStrip(self):
         """
-        Once you have set the colours of the strip/matrix LEDs, use this method to output to the strip to the LEDs.
+        Once you have set the colours of the terminal/matrix LEDs, use this to update the LEDs.
         """
         for pixel in range(self.__strip.numPixels()):
             r, g, b, brightness = self.__pixels[pixel]
@@ -431,8 +463,3 @@ class Strip:
             if 0 <= x < self.__width and 0 <= y <= self.__height:
                 realpixel = y * self.__width + x
         return realpixel
-
-    def __atexit(self):
-        """This will be called when the program exits to clear the LEDs"""
-        self.clearStrip()
-        self.showStrip()

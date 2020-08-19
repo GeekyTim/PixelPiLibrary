@@ -7,29 +7,34 @@ If you have not already installed the library, see :ref:`Installing the Python L
 
 Creating a Strip Object
 -----------------------
+.. module:: pixelpi
+
 
 .. autoclass:: pixelpi.Strip
-   :members: getLength, getWidth, getHeight, getStripType, getStripNumber, getUpdateStatus, getStripPattern
+   :members: getLength, getWidth, getHeight, getStripType, getStripNumber, updateStatus
 
-Setting LED Colours
--------------------
-.. automethod:: pixelpi.Strip.showStrip
-
+Setting LED Colours and Brightness
+----------------------------------
 .. automethod:: pixelpi.Strip.setLED
-
-.. automethod:: pixelpi.Strip.clearStrip
-
-.. automethod:: pixelpi.Strip.setBrightness
-
-.. automethod:: pixelpi.Strip.setUpdateStatus
 
 .. automethod:: pixelpi.Strip.getLED
 
+.. automethod:: pixelpi.Strip.setBrightness
+
 .. automethod:: pixelpi.Strip.setImage
 
-.. automethod:: pixelpi.Strip.setStripPattern
+.. automethod:: pixelpi.Strip.setPattern
 
+.. automethod:: pixelpi.Strip.clearStrip
+
+
+Manipulating LED Colours
+------------------------
 .. automethod:: pixelpi.Strip.rotateStrip
 
 .. automethod:: pixelpi.Strip.reflectStrip
+
+Controlling Strip Updates
+-------------------------
+.. automethod:: pixelpi.Strip.showStrip
 

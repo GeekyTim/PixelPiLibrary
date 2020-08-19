@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-import colorsys
-import numpy
-import time
-from pixelpi import PixelPi
-from typing import Any
 
-strip2 = PixelPi(2, 256, striptype='WS2812', brightness=40)
+from pixelpi import Strip
 
-strip2.clearStrip()
-colourarray = strip2.getStrip
+strip = Strip(2, 256, striptype='WS2812', brightness=40)
+
+strip.clearStrip()
+colourarray = strip.getLED()
 
 print(colourarray)
 
@@ -16,8 +13,7 @@ for pixel in range(len(colourarray)):
     colourarray[pixel] = [pixel, 0, 255 - pixel, 51]
 
 while True:
-    strip2.sequence_set(colourarray)
-    # strip2.sequence_reflect(colourarray)
-    strip2.showStrip()
+    strip.setLED(pattern=colourarray)
+    strip.showStrip()
     # time.sleep(0.2)
-    colourarray = strip2.sequence_rotate(colourarray, 1)
+    colourarray = strip.rotateStrip(colourarray, 1)

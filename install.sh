@@ -9,7 +9,7 @@ WORKING_DIR=$(pwd)
 
 apt update
 apt install -y python3-pip
-apt install python3-numpy -y
+apt install libatlas-base-dev python3-numpy libopenjp2-7 libopenjp2-7-dev libopenjp2-tools -y
 pip3 install rpi.gpio rpi_ws281x gpiozero Pillow
 
 cd $WORKING_DIR/library

@@ -1,10 +1,8 @@
 """
 .. module:: pixelpi
    :platform: Unix
-   :synopsis: A useful module indeed.
+   :synopsis: For controlling a PixelPi board.
 """
-
-__version__ = '0.1.0'
 
 from .button import Button
 from .strip import Strip

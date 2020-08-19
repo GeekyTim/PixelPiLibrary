@@ -12,6 +12,8 @@ Change the parameters below until you see the colours indicated on the screen:
     size = The number of LEDs in your terminal (can be (x, y) for a matrix)
     
     shape = The 'shape' of the terminal.
+            * `straight` - A led string (default)
+            * `reverse` - A led string which starts at the opposite end
             * `matrix` - a normal matrix where the led order goes left to right. i.e:
               1 2 3 4
               5 6 7 8
@@ -29,7 +31,7 @@ Change the parameters below until you see the colours indicated on the screen:
     brightness = The default brightness for all LEDs (0-255).   
 """
 
-strip = Strip(4, (8, 32), shape="zmatrix", ledtype='WS2812', brightness=30)
+strip = Strip(terminal=1, size=256, shape='straight', ledtype='WS2812', brightness=40)
 
 try:
     while True:
@@ -51,15 +53,12 @@ try:
         strip.clearStrip()
         strip.showStrip()
 
-        for y in range(strip.getHeight):
-            for x in range(strip.getWidth):
-                led = (x, y)
-                print("White: ", led)
-                strip.setLED(rgb=(255, 255, 255), led=led)
-                strip.showStrip()
-                time.sleep(0.25)
-                strip.setLED(rgb=(0, 0, 0), led=led)
-                strip.showStrip()
+        for led in range(strip.getLength):
+            print("White: ", led)
+            strip.setLED(rgb=(255, 255, 255), led=led)
+            strip.showStrip()
+            time.sleep(0.25)
+            strip.setLED(rgb=(0, 0, 0), led=led)
 
 except KeyboardInterrupt:
     strip.clearStrip()
