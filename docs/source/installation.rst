@@ -35,6 +35,10 @@ Uncomment or add the following to in the optional hardware interfaces::
 
  dtparam=spi=on
 
+Add the following line to the end of the file to set memory frequency::
+
+ core_freq=250
+
 Disable Sound in the Kernel
 ===========================
 
@@ -54,7 +58,7 @@ boot commandline file::
 
  sudo nano /boot/cmdline.txt
 
-Add the following to the end of the only line to increase the SPI buffer size:
+Add the following to the end of the only line to increase the SPI buffer size::
 
  spidev.bufsiz=32768
 

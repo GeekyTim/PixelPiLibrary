@@ -2,17 +2,18 @@
 
 import sys
 
-# import site
 import mock
+import sphinx_rtd_theme
+from sphinx.ext import autodoc
 
-PACKAGE_NAME = u"PixelPi Library"
+PACKAGE_NAME = "PixelPi Library"
 PACKAGE_HANDLE = "PixelPi"
 PACKAGE_MODULE = "Strip"
+PACKAGE_COPYRIGHT = "2020, Hut 8 Designs"
+PACKAGE_AUTHOR = "Geeky Tim"
 
 # Prompte /usr/local/lib to the front of sys.path
 # sys.path.insert(0,site.getsitepackages()[0])
-
-import sphinx_rtd_theme
 
 sys.modules['RPi'] = mock.Mock()
 sys.modules['RPi.GPIO'] = mock.Mock()
@@ -22,8 +23,7 @@ sys.modules['PIL'] = mock.Mock()
 sys.modules['atexit'] = mock.Mock()
 
 sys.path.insert(0, '../../library')
-
-from sphinx.ext import autodoc
+from pixelpi import Strip
 
 
 class OutlineMethodDocumenter(autodoc.MethodDocumenter):
@@ -97,8 +97,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = PACKAGE_NAME
-copyright = u'2020, Hut 8 Designs'
-author = u'Geeky Tim'
+copyright = PACKAGE_COPYRIGHT
+author = PACKAGE_AUTHOR
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -136,13 +136,13 @@ html_theme_path = [
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
 #
-html_logo = '.\images\hut256.png'
+html_logo = 'images/hut256.png'
 
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
-# pixels large.
+# shift large.
 #
-html_favicon = '.\images\hut256.png'
+html_favicon = 'images/hut256.png'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -179,7 +179,7 @@ html_show_sphinx = False
 #
 # html_use_opensearch = ''
 
-# This is the file name suffix for HTML files (e.g. ".xhtml").
+# This is the file name suffix for HTML files (e.green. ".xhtml").
 # html_file_suffix = None
 
 # Language to be used for generating the HTML full-text search index.
