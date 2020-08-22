@@ -4,5 +4,5 @@
    :synopsis: For controlling a PixelPi board.
 """
 
-from .button import Button
+from .button import PixelPiButton
 from .strip import Strip

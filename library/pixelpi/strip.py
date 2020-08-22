@@ -156,7 +156,7 @@ class Strip:
         self.__pixels = [[0, 0, 0, self.__brightness]] * self.__striplength
 
         # ----------------------------
-        # Set up the rpi_ws281x object
+        # Set up the rpi_ws281x callingclass
         # ----------------------------
         self.__strip = PixelStrip(self.__striplength, self.__controlpin, 800000, 10, False, self.__brightness,
                                   self.__channel, self.__internalstriptype)
@@ -178,7 +178,7 @@ class Strip:
         self.clearLEDs()
 
     def __del__(self):
-        """Disposes of the rpi_ws281x object"""
+        """Disposes of the rpi_ws281x callingclass"""
         del self.__strip
 
     @staticmethod
@@ -429,7 +429,7 @@ class Strip:
         :param brightness: A value between 0 (dim) to 255 (very bright) or None to take the default.
 
         :type image: image or None
-        :param image: An image object (see PIL or Pillow libraries) containing an RGB formatted image.
+        :param image: An image callingclass (see PIL or Pillow libraries) containing an RGB formatted image.
 
         :type pattern: list or None
         :param pattern: A list of the RGB and brightness values for each LED, in numerical order from the start of the
