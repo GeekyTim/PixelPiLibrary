@@ -22,6 +22,7 @@ up to four (4) WS281x type RGB LED strips or matrices independently with one Ras
     testing
     examples
     library
+    button
 
 Indices and tables
 ==================

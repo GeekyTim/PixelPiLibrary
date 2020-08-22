@@ -37,7 +37,7 @@ classifiers = ['Development Status :: 4 - Beta',
 
 setup(
     name='pixelpi',
-    version='0.1.2',
+    version='0.1.6',
     author='Tim Richardson',
     author_email='tim@potton.me.uk',
     description="""Python library for driving ws2812 LEDs with a Raspberry Pi""",

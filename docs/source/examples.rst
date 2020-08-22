@@ -13,7 +13,6 @@ Run the code using::
 
 Rainbow
 -------
-
 Displays a moving rainbow on your LEDs.
 
 .. literalinclude:: ../../examples/rainbow.py
