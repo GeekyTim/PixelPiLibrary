@@ -16,6 +16,7 @@ The PixelPi consists of the following components:
 * One 2x40 pin header (J1)
 * Optional GPIO Pin breakout pins (J2)
 * One PixelPi PCB
+* One SN74HTC125N Level Shifter
 
 .. image:: images/build/build_003.jpg
   :width: 800
