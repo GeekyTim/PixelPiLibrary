@@ -6,10 +6,10 @@ import time
 from pixelpi import Strip
 
 # Change the terminal type to the type you have
-strip1 = Strip(1, 256, ledtype='WS2811_GRB', brightness=30)
-strip2 = Strip(2, 256, ledtype='WS2811_GRB', brightness=30)
-strip3 = Strip(3, 256, ledtype='WS2811_GRB', brightness=30)
-strip4 = Strip(4, 256, ledtype='WS2811_GRB', brightness=30)
+strip1 = Strip(1, 180, ledtype='WS2811_GRB', brightness=50)
+strip2 = Strip(2, 180, ledtype='WS2811_GRB', brightness=50)
+strip3 = Strip(3, 180, ledtype='WS2811_GRB', brightness=50)
+strip4 = Strip(4, 180, ledtype='WS2811_GRB', brightness=50)
 
 spacing = 360.0 / 16.0
 hue = 0
